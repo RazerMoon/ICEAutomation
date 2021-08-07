@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ICEAutomation": {
+      "commandName": "Project",
+      "commandLineArgs": "process --motion rotatingMotion 55 *.JPG \"G:\\SteamLibrary\\steamapps\\common\\Grand Theft Auto V\\360Pictures\""
+    }
+  }
+}

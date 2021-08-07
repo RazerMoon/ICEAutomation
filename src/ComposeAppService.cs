@@ -4,6 +4,7 @@ using FlaUI.Core.AutomationElements.Infrastructure;
 using FlaUI.Core.Conditions;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Identifiers;
+using FlaUI.Core.Input;
 using FlaUI.UIA3;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace ImageComposeEditorAutomation
         Action<int> onProgress;
         Application app;
 
-        public void Compose(string[] images, BaseOptions options, Action<string> onEvent = null, Action<int> onProgress = null, bool saveProject = false)
+        public void Compose(string[] images, BaseOptions options, Action<string> onEvent = null, Action<int> onProgress = null, bool saveProject = false, string filename = null)
         {
             var cameraMotion = options.Motion;
             this.onEvent = onEvent;
@@ -33,6 +34,9 @@ namespace ImageComposeEditorAutomation
             var appStr = ConfigurationManager.AppSettings["ICE-app-path"];
             var appName = Path.GetFileName(appStr);
             var exportBtnLabel = ConfigurationManager.AppSettings["Export-btn-label"];
+            var cropBtnLabel = ConfigurationManager.AppSettings["Crop-btn-label"];
+            var autoCompleteBtnLabel = ConfigurationManager.AppSettings["AutoComplete-btn-label"];
+            var autoCompleteCBoxLabel = ConfigurationManager.AppSettings["AutoComplete-cbox-label"];
             var exportToDiskBtnLabel = ConfigurationManager.AppSettings["ExportToDisk-btn-label"];
             var cameraMotionLabel = ConfigurationManager.AppSettings["CameraMotion-btn-label"];
             var exportPanoramaBtnLabel = ConfigurationManager.AppSettings["ExportPanorama-btn-label"];
@@ -65,6 +69,26 @@ namespace ImageComposeEditorAutomation
 
                 } while (string.IsNullOrWhiteSpace(title));
 
+                try
+                {
+                    AutomationElement button1 = null;
+
+                    do
+                    {
+                        button1 = window.FindFirstDescendant(cf => cf.ByText(exportBtnLabel));
+                        if (button1 == null)
+                        {
+                            OnEvent(".");
+                        }
+                    } while (button1 == null);
+                }
+                catch (Exception ex)
+                {
+                    OnEvent(ex.Message);
+                }
+
+                OnEvent("Updates finished");
+
                 OnEvent("files :" + imgStr);
                 if (options is StructurePanoramaOptions)
                     SetStructurePanorama(automation);
@@ -76,6 +100,68 @@ namespace ImageComposeEditorAutomation
 
                 try
                 {
+                    AutomationElement cropbutton = null;
+                    do
+                    {
+                        cropbutton = window.FindFirstDescendant(cf => cf.ByText(cropBtnLabel));
+                        if (cropbutton == null)
+                        {
+                            OnEvent(".");
+                        }
+                    } while (cropbutton == null);
+
+                    if (cropbutton.ControlType != ControlType.Button)
+                        cropbutton = cropbutton.AsButton().Parent;
+
+                    cropbutton?.AsButton().Invoke();
+                    OnEvent("Cropping...");
+
+                    AutomationElement autocompletebutton = null;
+                    do
+                    {
+                        autocompletebutton = window.FindFirstDescendant(cf => cf.ByText(autoCompleteBtnLabel));
+                        if (autocompletebutton == null)
+                        {
+                            OnEvent(".");
+                        }
+                    } while (autocompletebutton == null);
+
+                    while (!autocompletebutton.IsEnabled);
+
+                    autocompletebutton?.AsButton().Invoke();
+                    OnEvent("Auto completing...");
+
+                    bool finished = false;
+
+                    do
+                    {
+                        var window2 = app.GetMainWindow(automation);
+                        // This might not work if autocomplete fails
+                        var btn2 = window.FindFirstDescendant(cf => cf.ByText(autoCompleteBtnLabel));
+
+                        title = window2.Title;
+                        finished = btn2 != null && title.StartsWith("U");
+                        int percent = 0;
+                        if (!finished)
+                        {
+                            var percentStr = title.Substring(0, 2);
+                            var numStr = percentStr[1] == '%' ? percentStr.Substring(0, 1) : percentStr;
+                            if (int.TryParse(numStr, out percent))
+                                onProgress?.Invoke(percent);
+                        }
+                    } while (!finished);
+
+                    var autoFailWindow = app.GetMainWindow(automation);
+                    var autoFailBtn = window.FindFirstDescendant(cf => cf.ByAutomationId("yesButton"));
+
+                    if (autoFailBtn != null)
+                    {
+                        autoFailBtn?.AsButton().Invoke();
+                        OnEvent("Cancelling failed auto complete");
+                    }
+
+                    OnEvent("Finished auto completing...");
+
                     AutomationElement button1 = null;
                     do
                     {
@@ -90,7 +176,7 @@ namespace ImageComposeEditorAutomation
                         button1 = button1.AsButton().Parent;
 
                     button1?.AsButton().Invoke();
-                    bool finished = false;
+                    finished = false;
                     OnEvent("composing.");
                     do
                     {
@@ -117,6 +203,14 @@ namespace ImageComposeEditorAutomation
 
                 try
                 {
+                    var height = window.FindFirstDescendant(cf => cf.ByAutomationId("imageHeightTextBox"));
+                    height?.AsTextBox().Enter("2048");
+                    Wait.UntilInputIsProcessed();
+
+                    var quality = window.FindFirstDescendant(cf => cf.ByAutomationId("jpegQualityTextBox"));
+                    quality?.AsTextBox().Enter("100");
+                    Wait.UntilInputIsProcessed();
+
                     var button2 = window.FindFirstDescendant(cf => cf.ByText(exportToDiskBtnLabel));
                     if (button2 != null && button2.ControlType != ControlType.Button)
                         button2 = button2.AsButton().Parent;
@@ -135,6 +229,20 @@ namespace ImageComposeEditorAutomation
                         ? window.ModalWindows[0]
                         : window.ModalWindows.FirstOrDefault(w => w.Name == exportPanoramaBtnLabel);
                     var buttonSave = saveDlg.FindFirstDescendant(cf => cf.ByText(saveBtnLabel)).AsButton();
+
+                    var filenameEdit = saveDlg.FindFirstDescendant(cf => cf.ByAutomationId("FileNameControlHost"));
+
+                    if (filenameEdit == null)
+                    {
+                        OnEvent("Filename edit not found!");
+                    } else
+                    {
+                        var filenameEditBox = filenameEdit.FindFirstChild();
+                        filenameEditBox?.AsTextBox().Enter(filename);
+                        Wait.UntilInputIsProcessed();
+                    }
+
+
                     if (buttonSave == null) {
                         OnEvent("Save button not found: "+saveBtnLabel);
                     } else 

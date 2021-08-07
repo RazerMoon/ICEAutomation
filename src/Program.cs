@@ -20,7 +20,7 @@ namespace ImageComposeEditorAutomation
                 .WithParsed<ComposeOptions>(options => Compose(options))
                 .WithParsed<ProcessOptions>(options => Process(options))
                 .WithParsed<StructurePanoramaOptions>(options => Process(options))
-                .WithNotParsed(errors => { }); // errors is a sequence of type IEnumerable<Error>                                
+                .WithNotParsed(errors => { }); // errors is a sequence of type IEnumerable<Error>
             Console.ReadLine();
         }
 
@@ -35,25 +35,43 @@ namespace ImageComposeEditorAutomation
 
         private static void Process(ProcessBaseOptions options)
         {
-            var composeApp = new ComposeAppService();
+            string[] dirs = Directory.GetDirectories(options.Folder);
 
-            Console.WriteLine("process...");
-            if (string.IsNullOrEmpty(options.Extension))
-                options.Extension = "*.JPG";
-
-            if (!string.IsNullOrEmpty(options.Folder))
-                Directory.SetCurrentDirectory(options.Folder);
-            var files = GroupFiles(options.Extension, options.Num, ignoreStichInName: true);
-            int total = files.Count;
-            int count = 0;
-            foreach (var item in files)
+            foreach (string dir in dirs)
             {
-                count++;
-                Console.WriteLine(string.Format("composing {0} of {1}....", count, total));
-                var saveProject = options.Save.HasValue ? options.Save.Value : false;
-                composeApp.Compose(item, options, m => Console.WriteLine(m), i => drawTextProgressBar(i, 100), saveProject: saveProject);
+                Console.WriteLine("Processing: {0}", dir);
+
+                string filename = dir;
+
+                if (dir.Contains('\\'))
+                {
+                    string[] splitFilename = dir.Split('\\');
+
+                    filename = splitFilename[splitFilename.Length - 1];
+                }
+
+                var composeApp = new ComposeAppService();
+
+                Console.WriteLine("process...");
+                if (string.IsNullOrEmpty(options.Extension))
+                    options.Extension = "*.JPG";
+
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.SetCurrentDirectory(dir);
+                var files = GroupFiles(options.Extension, options.Num, ignoreStichInName: true);
+                int total = files.Count;
+                int count = 0;
+                foreach (var item in files)
+                {
+                    count++;
+                    Console.WriteLine(string.Format("composing {0} of {1}....", count, total));
+                    var saveProject = options.Save.HasValue ? options.Save.Value : false;
+                    composeApp.Compose(item, options, m => Console.WriteLine(m), i => drawTextProgressBar(i, 100), saveProject: saveProject, filename: filename);
+                }
+                Console.WriteLine("Finished.");
+
             }
-            Console.WriteLine("Finished.");
+
         }
 
         private static List<string[]> GroupFiles(string extension, int groupNum, bool ignoreStichInName = false)
