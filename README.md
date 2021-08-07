@@ -17,34 +17,21 @@ Next adjust the ICEAutomation.bat to point to this folder. Then copy the batch f
 
 # Instructions
 
-1) open a command line and move to the folder where your images are
-2) execute 
-- "ICEAutomation compose [file1] [file2] [file3...]" to stitch those files
-- "ICEAutomation process" to process all *.JPG files in current folder in groups of 3
-- "ICEAutomation process [num]" to process all *.JPG files in current folder in groups of [num]
-- "ICEAutomation process [num] [ext]" to process all files with extension [ext] in current folder in groups of [num]
-- "ICEAutomation process [num] [ext] [folder]" to process all files with extension [ext] in [folder] in groups of [num]
-- "ICEAutomation structure [num] [ext] [folder]" process as before but using structure panorama 
+1. Run this:
+```
+ICEAutomation process --motion rotatingMotion [No. of images in each folder] *.JPG [Directory with images]
+```
 
-Options:
-  - --motion: to specify Camera motion type. Default: autoDetect. Possible values: autoDetect , planarMotion, planarMotionWithSkew, planarMotionWithPerspective, rotatingMotion]
-  - --save: saves stich processing file
+Should look like this:
 
-Structure panorama options:
-  - --initial-corner: topLef (default), topRight, bottomLeft, bottomRight
-  - --rows: Number of rows. If defined the direction will be down (if intial corner is top) or up (if initial corner is bottom)
-  - --cols: Number of columns. If defined the direction will be right (if intial corner is left) or left (if initial corner is right)
-  - --order: serpentine, zigzag
-  - --angular-range: less360, horiz, vert  (pending)
-  - --horizontal-overlap
-  - --vertical-overlap
-  - --search-radious  (pending)
-  - --auto-overlap (pending)
+```
+ICEAutomation process --motion rotatingMotion 55 *.JPG "G:\SteamLibrary\steamapps\common\Grand Theft Auto V\360Pictures"
+```
 
 # Warning
 
 The application uses button labels to automate ICE. Depending of your environment this names can change (for example "Save" button).
 You can configure the button labels in your ICE in app.config. 
 
-The processed files will be copied in the last folder used by ICE. So I recommend firt executing manually a stich to select the destination folder.
+**The processed files will be copied to the last folder used by ICE. So I recommend manually executing a stich first, to select the destination folder.**
 

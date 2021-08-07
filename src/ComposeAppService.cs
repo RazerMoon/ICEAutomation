@@ -26,7 +26,7 @@ namespace ImageComposeEditorAutomation
         Action<int> onProgress;
         Application app;
 
-        public void Compose(string[] images, BaseOptions options, Action<string> onEvent = null, Action<int> onProgress = null, bool saveProject = false, string filename = null)
+        public void Compose(string[] images, BaseOptions options, Action<string> onEvent = null, Action<int> onProgress = null, bool saveProject = false, string filename = null, bool lastImage = false)
         {
             var cameraMotion = options.Motion;
             this.onEvent = onEvent;
@@ -249,6 +249,60 @@ namespace ImageComposeEditorAutomation
                         buttonSave?.Invoke();
 
                     Thread.Sleep(saveWait);
+
+                    try
+                    {
+                        if (!File.Exists("../images.txt"))
+                        {
+                            using (FileStream fs = File.Create("../images.txt"))
+                            {
+                                byte[] info = new UTF8Encoding(true).GetBytes("Image.objects.bulk_create([");
+                                // Add some information to the file.
+                                fs.Write(info, 0, info.Length);
+                            }
+                        }
+
+                        string prevLine;
+
+                        using (StreamReader sr = new StreamReader("../images.txt"))
+                        {
+                            prevLine = sr.ReadLine();
+                        }
+
+                        using (StreamWriter sw = new StreamWriter("../images.txt"))
+                        {
+                            string[] splitFilename = filename.Split('_');
+
+                            string xCord = splitFilename[0];
+                            string yCord = splitFilename[1];
+                            string zCord = splitFilename[2];
+
+                            string xRot = splitFilename[3];
+                            string yRot = splitFilename[4];
+                            string zRot = splitFilename[5];
+
+                            string end = "";
+
+                            if (lastImage)
+                            {
+                                end = "])";
+                            }
+
+                            if (prevLine == "Image.objects.bulk_create([")
+                            {
+                                sw.WriteLine(prevLine + "Image(xPosition=" + xCord + ", yPosition=" + yCord + ", zPosition=" + zCord + ", xRotation=" + xRot + ", yRotation=" + yRot + ", zRotation=" + zRot + ")" + end);
+                            } else
+                            {
+                                sw.WriteLine(prevLine + ", Image(xPosition=" + xCord + ", yPosition=" + yCord + ", zPosition=" + zCord + ", xRotation=" + xRot + ", yRotation=" + yRot + ", zRotation=" + zRot + ")" + end);
+                            }
+
+
+                        }
+                    } catch(Exception e)
+                    {
+                        Console.WriteLine("Exception: " + e.Message);
+                    }
+
 
                     if (saveProject)
                     {

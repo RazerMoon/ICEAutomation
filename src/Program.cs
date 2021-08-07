@@ -37,8 +37,12 @@ namespace ImageComposeEditorAutomation
         {
             string[] dirs = Directory.GetDirectories(options.Folder);
 
-            foreach (string dir in dirs)
+            int dirLength = dirs.Length;
+
+            for (int i = 0; i < dirLength; i++)
             {
+                string dir = dirs[i];
+
                 Console.WriteLine("Processing: {0}", dir);
 
                 string filename = dir;
@@ -59,14 +63,11 @@ namespace ImageComposeEditorAutomation
                 if (!string.IsNullOrEmpty(dir))
                     Directory.SetCurrentDirectory(dir);
                 var files = GroupFiles(options.Extension, options.Num, ignoreStichInName: true);
-                int total = files.Count;
-                int count = 0;
                 foreach (var item in files)
                 {
-                    count++;
-                    Console.WriteLine(string.Format("composing {0} of {1}....", count, total));
+                    Console.WriteLine(string.Format("composing {0} of {1}....", i+1, dirLength));
                     var saveProject = options.Save.HasValue ? options.Save.Value : false;
-                    composeApp.Compose(item, options, m => Console.WriteLine(m), i => drawTextProgressBar(i, 100), saveProject: saveProject, filename: filename);
+                    composeApp.Compose(item, options, m => Console.WriteLine(m), i => drawTextProgressBar(i, 100), saveProject: saveProject, filename: filename, lastImage: i + 1 == dirLength);
                 }
                 Console.WriteLine("Finished.");
 
