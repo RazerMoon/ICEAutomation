@@ -224,11 +224,20 @@ namespace ImageComposeEditorAutomation
                 }
                 try
                 {
-                    Thread.Sleep(1000);
-                    var saveDlg = window.ModalWindows.Length == 1
-                        ? window.ModalWindows[0]
-                        : window.ModalWindows.FirstOrDefault(w => w.Name == exportPanoramaBtnLabel);
-                    var buttonSave = saveDlg.FindFirstDescendant(cf => cf.ByText(saveBtnLabel)).AsButton();
+                    Window saveDlg = null;
+
+                    AutomationElement buttonSave = null;
+
+                    do
+                    {
+                        Thread.Sleep(1000);
+                        OnEvent("Searching for save button...");
+                        saveDlg = window.ModalWindows.Length == 1
+                            ? window.ModalWindows[0]
+                            : window.ModalWindows.FirstOrDefault(w => w.Name == exportPanoramaBtnLabel);
+
+                        buttonSave = saveDlg.FindFirstDescendant(cf => cf.ByAutomationId("1"));
+                    } while (buttonSave == null);
 
                     var filenameEdit = saveDlg.FindFirstDescendant(cf => cf.ByAutomationId("FileNameControlHost"));
 
@@ -246,7 +255,7 @@ namespace ImageComposeEditorAutomation
                     if (buttonSave == null) {
                         OnEvent("Save button not found: "+saveBtnLabel);
                     } else 
-                        buttonSave?.Invoke();
+                        buttonSave?.AsButton().Invoke();
 
                     Thread.Sleep(saveWait);
 
