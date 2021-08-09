@@ -15,6 +15,11 @@ namespace ImageComposeEditorAutomation
 
         static void Main(string[] args)
         {
+            System.Globalization.CultureInfo customCulture = (System.Globalization.CultureInfo)System.Threading.Thread.CurrentThread.CurrentCulture.Clone();
+            customCulture.NumberFormat.NumberDecimalSeparator = ".";
+
+            System.Threading.Thread.CurrentThread.CurrentCulture = customCulture;
+
             var parser = new Parser(config => config.HelpWriter = Console.Out);
             var options = parser.ParseArguments<ComposeOptions, ProcessOptions, StructurePanoramaOptions>(args)
                 .WithParsed<ComposeOptions>(options => Compose(options))
